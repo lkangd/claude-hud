@@ -3,7 +3,6 @@ import { parseTranscript } from './transcript.js';
 import { render } from './render/index.js';
 import { countConfigs } from './config-reader.js';
 import { getGitStatus } from './git.js';
-import { getUsage, getUsagePlanNameFallback } from './usage-api.js';
 import { loadConfig } from './config.js';
 import { parseExtraCmdArg, runExtraCmd } from './extra-cmd.js';
 import { getClaudeCodeVersion } from './version.js';
@@ -17,8 +16,6 @@ export async function main(overrides = {}) {
         parseTranscript,
         countConfigs,
         getGitStatus,
-        getUsage,
-        getUsagePlanNameFallback,
         loadConfig,
         parseExtraCmdArg,
         runExtraCmd,
@@ -47,24 +44,10 @@ export async function main(overrides = {}) {
         const gitStatus = config.gitStatus.enabled
             ? await deps.getGitStatus(stdin.cwd)
             : null;
-        // Only fetch usage if enabled in config (replaces env var requirement)
+        // Usage comes only from Claude Code's official stdin rate_limits fields.
         let usageData = null;
         if (config.display.showUsage !== false) {
-            const stdinUsage = deps.getUsageFromStdin(stdin);
-            if (stdinUsage) {
-                const fallbackPlanName = deps.getUsagePlanNameFallback();
-                usageData = fallbackPlanName
-                    ? { ...stdinUsage, planName: fallbackPlanName }
-                    : stdinUsage;
-            }
-            else {
-                usageData = await deps.getUsage({
-                    ttls: {
-                        cacheTtlMs: config.usage.cacheTtlSeconds * 1000,
-                        failureCacheTtlMs: config.usage.failureCacheTtlSeconds * 1000,
-                    },
-                });
-            }
+            usageData = deps.getUsageFromStdin(stdin);
         }
         const extraCmd = deps.parseExtraCmdArg();
         const extraLabel = extraCmd ? await deps.runExtraCmd(extraCmd) : null;

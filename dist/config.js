@@ -47,10 +47,6 @@ export const DEFAULT_CONFIG = {
         environmentThreshold: 0,
         customLine: '',
     },
-    usage: {
-        cacheTtlSeconds: 60,
-        failureCacheTtlSeconds: 15,
-    },
     colors: {
         context: 'green',
         usage: 'brightBlue',
@@ -146,11 +142,6 @@ function validateThreshold(value, max = 100) {
         return 0;
     return Math.max(0, Math.min(max, value));
 }
-function validatePositiveInt(value, defaultValue) {
-    if (typeof value !== 'number' || !Number.isInteger(value) || value <= 0)
-        return defaultValue;
-    return value;
-}
 export function mergeConfig(userConfig) {
     const migrated = migrateConfig(userConfig);
     const lineLayout = validateLineLayout(migrated.lineLayout)
@@ -236,10 +227,6 @@ export function mergeConfig(userConfig) {
             ? migrated.display.customLine.slice(0, 80)
             : DEFAULT_CONFIG.display.customLine,
     };
-    const usage = {
-        cacheTtlSeconds: validatePositiveInt(migrated.usage?.cacheTtlSeconds, DEFAULT_CONFIG.usage.cacheTtlSeconds),
-        failureCacheTtlSeconds: validatePositiveInt(migrated.usage?.failureCacheTtlSeconds, DEFAULT_CONFIG.usage.failureCacheTtlSeconds),
-    };
     const colors = {
         context: validateColorValue(migrated.colors?.context)
             ? migrated.colors.context
@@ -257,7 +244,7 @@ export function mergeConfig(userConfig) {
             ? migrated.colors.critical
             : DEFAULT_CONFIG.colors.critical,
     };
-    return { lineLayout, showSeparators, pathLevels, elementOrder, gitStatus, display, usage, colors };
+    return { lineLayout, showSeparators, pathLevels, elementOrder, gitStatus, display, colors };
 }
 export async function loadConfig() {
     const configPath = getConfigPath();

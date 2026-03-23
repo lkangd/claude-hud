@@ -47,10 +47,6 @@ export interface HudConfig {
         environmentThreshold: number;
         customLine: string;
     };
-    usage: {
-        cacheTtlSeconds: number;
-        failureCacheTtlSeconds: number;
-    };
     colors: HudColorOverrides;
 }
 export declare const DEFAULT_CONFIG: HudConfig;

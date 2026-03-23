@@ -1,7 +1,7 @@
 import { isLimitReached } from '../types.js';
 import { getContextPercent, getBufferedPercent, getModelName, getProviderLabel, getTotalTokens } from '../stdin.js';
 import { getOutputSpeed } from '../speed-tracker.js';
-import { coloredBar, critical, cyan, dim, magenta, red, warning, yellow, getContextColor, getQuotaColor, quotaBar, claudeOrange, RESET } from './colors.js';
+import { coloredBar, critical, cyan, dim, magenta, red, yellow, getContextColor, getQuotaColor, quotaBar, claudeOrange, RESET } from './colors.js';
 import { getAdaptiveBarWidth } from '../utils/terminal.js';
 const DEBUG = process.env.DEBUG?.includes('claude-hud') || process.env.DEBUG === '*';
 /**
@@ -26,14 +26,11 @@ export function renderSessionLine(ctx) {
     const contextValue = formatContextValue(ctx, percent, contextValueMode);
     const contextValueDisplay = `${getContextColor(percent, colors)}${contextValue}${RESET}`;
     // Model and context bar (FIRST)
-    // Plan name only shows if showUsage is enabled (respects hybrid toggle)
     const providerLabel = getProviderLabel(ctx.stdin);
     const showUsage = display?.showUsage !== false;
-    const planName = showUsage ? ctx.usageData?.planName : undefined;
     const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
-    const billingLabel = showUsage ? (planName ?? (hasApiKey ? red('API') : undefined)) : undefined;
-    const planDisplay = providerLabel ?? billingLabel;
-    const modelDisplay = planDisplay ? `${model} | ${planDisplay}` : model;
+    const modelQualifier = providerLabel ?? (showUsage && hasApiKey ? red('API') : undefined);
+    const modelDisplay = modelQualifier ? `${model} | ${modelQualifier}` : model;
     if (display?.showModel !== false && display?.showContextBar !== false) {
         parts.push(`${cyan(`[${modelDisplay}]`)} ${bar} ${contextValueDisplay}`);
     }
@@ -129,12 +126,8 @@ export function renderSessionLine(ctx) {
         }
     }
     // Usage limits display (shown when enabled in config, respects usageThreshold)
-    if (display?.showUsage !== false && ctx.usageData?.planName && !providerLabel) {
-        if (ctx.usageData.apiUnavailable) {
-            const errorHint = formatUsageError(ctx.usageData.apiError);
-            parts.push(warning(`usage: ⚠${errorHint}`, colors));
-        }
-        else if (isLimitReached(ctx.usageData)) {
+    if (display?.showUsage !== false && ctx.usageData && !providerLabel) {
+        if (isLimitReached(ctx.usageData)) {
             const resetTime = ctx.usageData.fiveHour === 100
                 ? formatResetTime(ctx.usageData.fiveHourResetAt)
                 : formatResetTime(ctx.usageData.sevenDayResetAt);
@@ -146,9 +139,6 @@ export function renderSessionLine(ctx) {
             const sevenDay = ctx.usageData.sevenDay;
             const effectiveUsage = Math.max(fiveHour ?? 0, sevenDay ?? 0);
             if (effectiveUsage >= usageThreshold) {
-                const syncingSuffix = ctx.usageData.apiError === 'rate-limited'
-                    ? ` ${dim('(syncing...)')}`
-                    : '';
                 const usageBarEnabled = display?.usageBarEnabled ?? true;
                 if (fiveHour === null && sevenDay !== null) {
                     const weeklyOnlyPart = formatUsageWindowPart({
@@ -160,7 +150,7 @@ export function renderSessionLine(ctx) {
                         barWidth,
                         forceLabel: true,
                     });
-                    parts.push(`${weeklyOnlyPart}${syncingSuffix}`);
+                    parts.push(weeklyOnlyPart);
                 }
                 else {
                     const fiveHourPart = formatUsageWindowPart({
@@ -181,10 +171,10 @@ export function renderSessionLine(ctx) {
                             usageBarEnabled,
                             barWidth,
                         });
-                        parts.push(`${fiveHourPart} | ${sevenDayPart}${syncingSuffix}`);
+                        parts.push(`${fiveHourPart} | ${sevenDayPart}`);
                     }
                     else {
-                        parts.push(`${fiveHourPart}${syncingSuffix}`);
+                        parts.push(fiveHourPart);
                     }
                 }
             }
@@ -268,15 +258,6 @@ function formatUsageWindowPart({ label, percent, resetAt, colors, usageBarEnable
     return reset
         ? `${label}: ${usageDisplay} (${reset})`
         : `${label}: ${usageDisplay}`;
-}
-function formatUsageError(error) {
-    if (!error)
-        return '';
-    if (error === 'rate-limited')
-        return ' (syncing...)';
-    if (error.startsWith('http-'))
-        return ` (${error.slice(5)})`;
-    return ` (${error})`;
 }
 function formatResetTime(resetAt) {
     if (!resetAt)

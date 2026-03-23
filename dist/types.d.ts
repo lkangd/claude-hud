@@ -50,19 +50,11 @@ export interface TodoItem {
     content: string;
     status: 'pending' | 'in_progress' | 'completed';
 }
-/** Usage window data from the OAuth API */
-export interface UsageWindow {
-    utilization: number | null;
-    resetAt: Date | null;
-}
 export interface UsageData {
-    planName: string | null;
     fiveHour: number | null;
     sevenDay: number | null;
     fiveHourResetAt: Date | null;
     sevenDayResetAt: Date | null;
-    apiUnavailable?: boolean;
-    apiError?: string;
 }
 export interface MemoryInfo {
     totalBytes: number;

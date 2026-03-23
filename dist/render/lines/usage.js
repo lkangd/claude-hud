@@ -1,6 +1,6 @@
 import { isLimitReached } from '../../types.js';
 import { getProviderLabel } from '../../stdin.js';
-import { critical, warning, dim, getQuotaColor, quotaBar, RESET } from '../colors.js';
+import { critical, dim, getQuotaColor, quotaBar, RESET } from '../colors.js';
 import { getAdaptiveBarWidth } from '../../utils/terminal.js';
 export function renderUsageLine(ctx) {
     const display = ctx.config?.display;
@@ -8,17 +8,13 @@ export function renderUsageLine(ctx) {
     if (display?.showUsage === false) {
         return null;
     }
-    if (!ctx.usageData?.planName) {
+    if (!ctx.usageData) {
         return null;
     }
     if (getProviderLabel(ctx.stdin)) {
         return null;
     }
     const label = dim('Usage');
-    if (ctx.usageData.apiUnavailable) {
-        const errorHint = formatUsageError(ctx.usageData.apiError);
-        return `${label} ${warning(`⚠${errorHint}`, colors)}`;
-    }
     if (isLimitReached(ctx.usageData)) {
         const resetTime = ctx.usageData.fiveHour === 100
             ? formatResetTime(ctx.usageData.fiveHourResetAt)
@@ -34,9 +30,6 @@ export function renderUsageLine(ctx) {
     }
     const usageBarEnabled = display?.usageBarEnabled ?? true;
     const sevenDayThreshold = display?.sevenDayThreshold ?? 80;
-    const syncingSuffix = ctx.usageData.apiError === 'rate-limited'
-        ? ` ${dim('(syncing...)')}`
-        : '';
     const barWidth = getAdaptiveBarWidth();
     if (fiveHour === null && sevenDay !== null) {
         const weeklyOnlyPart = formatUsageWindowPart({
@@ -48,7 +41,7 @@ export function renderUsageLine(ctx) {
             barWidth,
             forceLabel: true,
         });
-        return `${label} ${weeklyOnlyPart}${syncingSuffix}`;
+        return `${label} ${weeklyOnlyPart}`;
     }
     const fiveHourPart = formatUsageWindowPart({
         label: '5h',
@@ -67,9 +60,9 @@ export function renderUsageLine(ctx) {
             usageBarEnabled,
             barWidth,
         });
-        return `${label} ${fiveHourPart} | ${sevenDayPart}${syncingSuffix}`;
+        return `${label} ${fiveHourPart} | ${sevenDayPart}`;
     }
-    return `${label} ${fiveHourPart}${syncingSuffix}`;
+    return `${label} ${fiveHourPart}`;
 }
 function formatUsagePercent(percent, colors) {
     if (percent === null) {
@@ -90,15 +83,6 @@ function formatUsageWindowPart({ label, percent, resetAt, colors, usageBarEnable
     return reset
         ? `${label}: ${usageDisplay} (resets in ${reset})`
         : `${label}: ${usageDisplay}`;
-}
-function formatUsageError(error) {
-    if (!error)
-        return '';
-    if (error === 'rate-limited')
-        return ' (syncing...)';
-    if (error.startsWith('http-'))
-        return ` (${error.slice(5)})`;
-    return ` (${error})`;
 }
 function formatResetTime(resetAt) {
     if (!resetAt)
