@@ -59,7 +59,7 @@ test('loadConfig returns valid config structure', async () => {
   assert.equal(typeof config.display.showClaudeCodeVersion, 'boolean');
   assert.equal(typeof config.display.showMemoryUsage, 'boolean');
   assert.equal(typeof config.colors, 'object');
-  for (const key of ['context', 'usage', 'warning', 'usageWarning', 'critical']) {
+  for (const key of ['context', 'usage', 'warning', 'usageWarning', 'critical', 'model', 'project', 'git', 'gitBranch', 'label', 'custom']) {
     const t = typeof config.colors[key];
     assert.ok(t === 'string' || t === 'number', `colors.${key} should be string or number, got ${t}`);
   }
@@ -273,6 +273,12 @@ test('mergeConfig defaults colors to expected semantic palette', () => {
   assert.equal(config.colors.warning, 'yellow');
   assert.equal(config.colors.usageWarning, 'brightMagenta');
   assert.equal(config.colors.critical, 'red');
+  assert.equal(config.colors.model, 'cyan');
+  assert.equal(config.colors.project, 'yellow');
+  assert.equal(config.colors.git, 'magenta');
+  assert.equal(config.colors.gitBranch, 'cyan');
+  assert.equal(config.colors.label, 'dim');
+  assert.equal(config.colors.custom, 208);
 });
 
 test('mergeConfig accepts valid color overrides and filters invalid values', () => {
@@ -283,6 +289,12 @@ test('mergeConfig accepts valid color overrides and filters invalid values', () 
       warning: 'brightBlue',
       usageWarning: 'yellow',
       critical: 'not-a-color',
+      model: 214,
+      project: '#33ff00',
+      git: 'cyan',
+      gitBranch: 'not-a-color',
+      label: 'dim',
+      custom: '#ff6600',
     },
   });
 
@@ -291,6 +303,12 @@ test('mergeConfig accepts valid color overrides and filters invalid values', () 
   assert.equal(config.colors.warning, 'brightBlue');
   assert.equal(config.colors.usageWarning, 'yellow');
   assert.equal(config.colors.critical, DEFAULT_CONFIG.colors.critical);
+  assert.equal(config.colors.model, 214);
+  assert.equal(config.colors.project, '#33ff00');
+  assert.equal(config.colors.git, 'cyan');
+  assert.equal(config.colors.gitBranch, DEFAULT_CONFIG.colors.gitBranch);
+  assert.equal(config.colors.label, 'dim');
+  assert.equal(config.colors.custom, '#ff6600');
 });
 
 // --- Custom color value tests (256-color and hex) ---
@@ -303,6 +321,12 @@ test('mergeConfig accepts 256-color index values', () => {
       warning: 220,
       usageWarning: 97,
       critical: 196,
+      model: 214,
+      project: 82,
+      git: 220,
+      gitBranch: 45,
+      label: 250,
+      custom: 208,
     },
   });
   assert.equal(config.colors.context, 82);
@@ -310,6 +334,12 @@ test('mergeConfig accepts 256-color index values', () => {
   assert.equal(config.colors.warning, 220);
   assert.equal(config.colors.usageWarning, 97);
   assert.equal(config.colors.critical, 196);
+  assert.equal(config.colors.model, 214);
+  assert.equal(config.colors.project, 82);
+  assert.equal(config.colors.git, 220);
+  assert.equal(config.colors.gitBranch, 45);
+  assert.equal(config.colors.label, 250);
+  assert.equal(config.colors.custom, 208);
 });
 
 test('mergeConfig accepts hex color strings', () => {
@@ -318,11 +348,15 @@ test('mergeConfig accepts hex color strings', () => {
       context: '#33ff00',
       usage: '#FFB000',
       warning: '#ff87d7',
+      label: '#abcdef',
+      custom: '#ff6600',
     },
   });
   assert.equal(config.colors.context, '#33ff00');
   assert.equal(config.colors.usage, '#FFB000');
   assert.equal(config.colors.warning, '#ff87d7');
+  assert.equal(config.colors.label, '#abcdef');
+  assert.equal(config.colors.custom, '#ff6600');
 });
 
 test('mergeConfig accepts mixed named, 256-color, and hex values', () => {
@@ -333,6 +367,12 @@ test('mergeConfig accepts mixed named, 256-color, and hex values', () => {
       warning: 'yellow',
       usageWarning: '#af87ff',
       critical: 'red',
+      model: 214,
+      project: '#33ff00',
+      git: 'magenta',
+      gitBranch: '#abcdef',
+      label: 'dim',
+      custom: 208,
     },
   });
   assert.equal(config.colors.context, '#33ff00');
@@ -340,6 +380,12 @@ test('mergeConfig accepts mixed named, 256-color, and hex values', () => {
   assert.equal(config.colors.warning, 'yellow');
   assert.equal(config.colors.usageWarning, '#af87ff');
   assert.equal(config.colors.critical, 'red');
+  assert.equal(config.colors.model, 214);
+  assert.equal(config.colors.project, '#33ff00');
+  assert.equal(config.colors.git, 'magenta');
+  assert.equal(config.colors.gitBranch, '#abcdef');
+  assert.equal(config.colors.label, 'dim');
+  assert.equal(config.colors.custom, 208);
 });
 
 test('mergeConfig rejects invalid 256-color indices', () => {

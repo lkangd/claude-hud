@@ -166,13 +166,19 @@ Edit `~/.claude/plugins/claude-hud/config.json` directly for advanced settings s
 | `display.showSessionName` | boolean | false | Show session slug or custom title from `/rename` |
 | `display.showClaudeCodeVersion` | boolean | false | Show the installed Claude Code version, e.g. `CC v2.1.81` |
 | `display.showMemoryUsage` | boolean | false | Show an approximate system RAM usage line in expanded layout |
-| `colors.context` | color name | `green` | Base color for the context bar and context percentage |
-| `colors.usage` | color name | `brightBlue` | Base color for usage bars and percentages below warning thresholds |
-| `colors.warning` | color name | `yellow` | Warning color for context thresholds and usage warning text |
-| `colors.usageWarning` | color name | `brightMagenta` | Warning color for usage bars and percentages near their threshold |
-| `colors.critical` | color name | `red` | Critical color for limit-reached states and critical thresholds |
+| `colors.context` | color value | `green` | Base color for the context bar and context percentage |
+| `colors.usage` | color value | `brightBlue` | Base color for usage bars and percentages below warning thresholds |
+| `colors.warning` | color value | `yellow` | Warning color for context thresholds and usage warning text |
+| `colors.usageWarning` | color value | `brightMagenta` | Warning color for usage bars and percentages near their threshold |
+| `colors.critical` | color value | `red` | Critical color for limit-reached states and critical thresholds |
+| `colors.model` | color value | `cyan` | Color for the model badge such as `[Opus]` |
+| `colors.project` | color value | `yellow` | Color for the project path |
+| `colors.git` | color value | `magenta` | Color for git wrapper text such as `git:(` and `)` |
+| `colors.gitBranch` | color value | `cyan` | Color for the git branch and branch status text |
+| `colors.label` | color value | `dim` | Color for labels and secondary metadata such as `Context`, `Usage`, counts, and progress text |
+| `colors.custom` | color value | `208` | Color for the optional custom line |
 
-Supported color names: `red`, `green`, `yellow`, `magenta`, `cyan`, `brightBlue`, `brightMagenta`.
+Supported color names: `dim`, `red`, `green`, `yellow`, `magenta`, `cyan`, `brightBlue`, `brightMagenta`. You can also use a 256-color number (`0-255`) or hex (`#rrggbb`).
 
 `display.showMemoryUsage` is fully opt-in and only renders in `expanded` layout. It reports approximate system RAM usage from the local machine, not precise memory pressure inside Claude Code or a specific process. The number may overstate actual pressure because reclaimable OS cache and buffers can still be counted as used memory.
 
@@ -228,7 +234,13 @@ To disable, set `display.showUsage` to `false`.
     "usage": "cyan",
     "warning": "yellow",
     "usageWarning": "magenta",
-    "critical": "red"
+    "critical": "red",
+    "model": "cyan",
+    "project": "yellow",
+    "git": "magenta",
+    "gitBranch": "cyan",
+    "label": "dim",
+    "custom": "#FF6600"
   }
 }
 ```

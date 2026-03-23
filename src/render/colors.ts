@@ -13,6 +13,7 @@ const BRIGHT_MAGENTA = '\x1b[95m';
 const CLAUDE_ORANGE = '\x1b[38;5;208m';
 
 const ANSI_BY_NAME: Record<HudColorName, string> = {
+  dim: DIM,
   red: RED,
   green: GREEN,
   yellow: YELLOW,
@@ -51,6 +52,10 @@ function colorize(text: string, color: string): string {
   return `${color}${text}${RESET}`;
 }
 
+function withOverride(text: string, value: HudColorValue | undefined, fallback: string): string {
+  return colorize(text, resolveAnsi(value, fallback));
+}
+
 export function green(text: string): string {
   return colorize(text, GREEN);
 }
@@ -77,6 +82,30 @@ export function dim(text: string): string {
 
 export function claudeOrange(text: string): string {
   return colorize(text, CLAUDE_ORANGE);
+}
+
+export function model(text: string, colors?: Partial<HudColorOverrides>): string {
+  return withOverride(text, colors?.model, CYAN);
+}
+
+export function project(text: string, colors?: Partial<HudColorOverrides>): string {
+  return withOverride(text, colors?.project, YELLOW);
+}
+
+export function git(text: string, colors?: Partial<HudColorOverrides>): string {
+  return withOverride(text, colors?.git, MAGENTA);
+}
+
+export function gitBranch(text: string, colors?: Partial<HudColorOverrides>): string {
+  return withOverride(text, colors?.gitBranch, CYAN);
+}
+
+export function label(text: string, colors?: Partial<HudColorOverrides>): string {
+  return withOverride(text, colors?.label, DIM);
+}
+
+export function custom(text: string, colors?: Partial<HudColorOverrides>): string {
+  return withOverride(text, colors?.custom, CLAUDE_ORANGE);
 }
 
 export function warning(text: string, colors?: Partial<HudColorOverrides>): string {

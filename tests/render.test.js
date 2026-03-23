@@ -11,6 +11,8 @@ import { renderAgentsLine } from '../dist/render/agents-line.js';
 import { renderTodosLine } from '../dist/render/todos-line.js';
 import { renderUsageLine } from '../dist/render/lines/usage.js';
 import { renderMemoryLine } from '../dist/render/lines/memory.js';
+import { renderIdentityLine } from '../dist/render/lines/identity.js';
+import { renderEnvironmentLine } from '../dist/render/lines/environment.js';
 import { getContextColor, getQuotaColor } from '../dist/render/colors.js';
 
 function stripAnsi(str) {
@@ -53,6 +55,12 @@ function baseContext() {
         warning: 'yellow',
         usageWarning: 'brightMagenta',
         critical: 'red',
+        model: 'cyan',
+        project: 'yellow',
+        git: 'magenta',
+        gitBranch: 'cyan',
+        label: 'dim',
+        custom: 208,
       },
     },
   };
@@ -417,6 +425,66 @@ test('renderProjectLine includes customLine when configured', () => {
   ctx.config.display.customLine = 'Stay sharp';
   const line = stripAnsi(renderProjectLine(ctx) ?? '');
   assert.ok(line.includes('Stay sharp'));
+});
+
+test('renderProjectLine uses configurable element colors', () => {
+  const ctx = baseContext();
+  ctx.stdin.cwd = '/tmp/my-project';
+  ctx.config.display.customLine = 'Stay sharp';
+  ctx.gitStatus = { branch: 'main', isDirty: false, ahead: 0, behind: 0 };
+  ctx.config.colors.model = 214;
+  ctx.config.colors.project = 82;
+  ctx.config.colors.git = 220;
+  ctx.config.colors.gitBranch = '#33ff00';
+  ctx.config.colors.custom = '#ff6600';
+
+  const line = renderProjectLine(ctx);
+  assert.ok(line?.includes('\x1b[38;5;214m[Opus]\x1b[0m'));
+  assert.ok(line?.includes('\x1b[38;5;82mmy-project\x1b[0m'));
+  assert.ok(line?.includes('\x1b[38;5;220mgit:(\x1b[0m'));
+  assert.ok(line?.includes('\x1b[38;2;51;255;0mmain\x1b[0m'));
+  assert.ok(line?.includes('\x1b[38;2;255;102;0mStay sharp\x1b[0m'));
+});
+
+test('label color overrides apply across shared secondary text surfaces', () => {
+  const ctx = baseContext();
+  ctx.config.colors.label = '#abcdef';
+  ctx.stdin.cwd = '/tmp/my-project';
+  ctx.claudeMdCount = 2;
+  ctx.rulesCount = 1;
+  ctx.gitStatus = { branch: 'main', isDirty: false, ahead: 0, behind: 0 };
+  ctx.usageData = {
+    fiveHour: 25,
+    sevenDay: null,
+    fiveHourResetAt: null,
+    sevenDayResetAt: null,
+  };
+  ctx.memoryUsage = {
+    totalBytes: 1000,
+    usedBytes: 500,
+    freeBytes: 500,
+    usedPercent: 50,
+  };
+  ctx.config.display.showMemoryUsage = true;
+  ctx.transcript.tools = [
+    { id: 'tool-1', name: 'Read', target: 'src/index.ts', status: 'running', startTime: new Date(0) },
+  ];
+  ctx.transcript.agents = [
+    { id: 'agent-1', type: 'planner', model: 'haiku', description: 'Inspecting', status: 'running', startTime: new Date(0) },
+  ];
+  ctx.transcript.todos = [
+    { content: 'Ship it', status: 'in_progress' },
+    { content: 'Done', status: 'completed' },
+  ];
+
+  const expected = '\x1b[38;2;171;205;239m';
+  assert.ok(renderIdentityLine(ctx).includes(`${expected}Context\x1b[0m`));
+  assert.ok(renderUsageLine(ctx)?.includes(`${expected}Usage\x1b[0m`));
+  assert.ok(renderEnvironmentLine(ctx)?.includes(`${expected}2 CLAUDE.md | 1 rules\x1b[0m`));
+  assert.ok(renderMemoryLine({ ...ctx, config: { ...ctx.config, lineLayout: 'expanded', display: { ...ctx.config.display, showMemoryUsage: true } } })?.includes(`${expected}Approx RAM\x1b[0m`));
+  assert.ok(renderToolsLine(ctx)?.includes(`${expected}: src/index.ts\x1b[0m`));
+  assert.ok(renderAgentsLine(ctx)?.includes(`${expected}[haiku]\x1b[0m`));
+  assert.ok(renderTodosLine(ctx)?.includes(`${expected}(1/2)\x1b[0m`));
 });
 
 test('renderProjectLine includes duration when showDuration is true', () => {

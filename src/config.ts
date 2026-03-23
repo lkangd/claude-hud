@@ -9,6 +9,7 @@ export type AutocompactBufferMode = 'enabled' | 'disabled';
 export type ContextValueMode = 'percent' | 'tokens' | 'remaining' | 'both';
 export type HudElement = 'project' | 'context' | 'usage' | 'memory' | 'environment' | 'tools' | 'agents' | 'todos';
 export type HudColorName =
+  | 'dim'
   | 'red'
   | 'green'
   | 'yellow'
@@ -26,6 +27,12 @@ export interface HudColorOverrides {
   warning: HudColorValue;
   usageWarning: HudColorValue;
   critical: HudColorValue;
+  model: HudColorValue;
+  project: HudColorValue;
+  git: HudColorValue;
+  gitBranch: HudColorValue;
+  label: HudColorValue;
+  custom: HudColorValue;
 }
 
 export const DEFAULT_ELEMENT_ORDER: HudElement[] = [
@@ -118,6 +125,12 @@ export const DEFAULT_CONFIG: HudConfig = {
     warning: 'yellow',
     usageWarning: 'brightMagenta',
     critical: 'red',
+    model: 'cyan',
+    project: 'yellow',
+    git: 'magenta',
+    gitBranch: 'cyan',
+    label: 'dim',
+    custom: 208,
   },
 };
 
@@ -143,7 +156,8 @@ function validateContextValue(value: unknown): value is ContextValueMode {
 }
 
 function validateColorName(value: unknown): value is HudColorName {
-  return value === 'red'
+  return value === 'dim'
+    || value === 'red'
     || value === 'green'
     || value === 'yellow'
     || value === 'magenta'
@@ -329,6 +343,24 @@ export function mergeConfig(userConfig: Partial<HudConfig>): HudConfig {
     critical: validateColorValue(migrated.colors?.critical)
       ? migrated.colors.critical
       : DEFAULT_CONFIG.colors.critical,
+    model: validateColorValue(migrated.colors?.model)
+      ? migrated.colors.model
+      : DEFAULT_CONFIG.colors.model,
+    project: validateColorValue(migrated.colors?.project)
+      ? migrated.colors.project
+      : DEFAULT_CONFIG.colors.project,
+    git: validateColorValue(migrated.colors?.git)
+      ? migrated.colors.git
+      : DEFAULT_CONFIG.colors.git,
+    gitBranch: validateColorValue(migrated.colors?.gitBranch)
+      ? migrated.colors.gitBranch
+      : DEFAULT_CONFIG.colors.gitBranch,
+    label: validateColorValue(migrated.colors?.label)
+      ? migrated.colors.label
+      : DEFAULT_CONFIG.colors.label,
+    custom: validateColorValue(migrated.colors?.custom)
+      ? migrated.colors.custom
+      : DEFAULT_CONFIG.colors.custom,
   };
 
   return { lineLayout, showSeparators, pathLevels, elementOrder, gitStatus, display, colors };

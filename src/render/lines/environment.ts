@@ -1,5 +1,5 @@
 import type { RenderContext } from '../../types.js';
-import { dim } from '../colors.js';
+import { label } from '../colors.js';
 
 export function renderEnvironmentLine(ctx: RenderContext): string | null {
   const display = ctx.config?.display;
@@ -37,5 +37,5 @@ export function renderEnvironmentLine(ctx: RenderContext): string | null {
     return null;
   }
 
-  return dim(parts.join(' | '));
+  return label(parts.join(' | '), ctx.config?.colors);
 }
