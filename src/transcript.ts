@@ -260,9 +260,31 @@ function processEntry(
       } else if (block.name === 'TodoWrite') {
         const input = block.input as { todos?: TodoItem[] };
         if (input?.todos && Array.isArray(input.todos)) {
+          // Build reverse map: content → taskIds from existing state
+          const contentToTaskIds = new Map<string, string[]>();
+          for (const [taskId, idx] of taskIdToIndex) {
+            if (idx < latestTodos.length) {
+              const content = latestTodos[idx].content;
+              const ids = contentToTaskIds.get(content) ?? [];
+              ids.push(taskId);
+              contentToTaskIds.set(content, ids);
+            }
+          }
+
           latestTodos.length = 0;
           taskIdToIndex.clear();
           latestTodos.push(...input.todos);
+
+          // Re-register taskId mappings for items whose content matches
+          for (let i = 0; i < latestTodos.length; i++) {
+            const ids = contentToTaskIds.get(latestTodos[i].content);
+            if (ids) {
+              for (const taskId of ids) {
+                taskIdToIndex.set(taskId, i);
+              }
+              contentToTaskIds.delete(latestTodos[i].content);
+            }
+          }
         }
       } else if (block.name === 'TaskCreate') {
         const input = block.input as Record<string, unknown>;

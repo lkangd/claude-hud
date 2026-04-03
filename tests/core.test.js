@@ -300,6 +300,79 @@ test('parseTranscript aggregates tools, agents, and todos', async () => {
   assert.equal(result.sessionStart?.toISOString(), '2024-01-01T00:00:00.000Z');
 });
 
+test('TaskCreate taskId is preserved across TodoWrite and usable by TaskUpdate', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'claude-hud-'));
+  const filePath = path.join(dir, 'taskid-preserve.jsonl');
+  const lines = [
+    // 1. TaskCreate adds a task with taskId "alpha"
+    JSON.stringify({
+      timestamp: '2024-01-01T00:00:00.000Z',
+      message: { content: [{ type: 'tool_use', id: 'tc-1', name: 'TaskCreate', input: { taskId: 'alpha', subject: 'Build feature' } }] },
+    }),
+    // 2. TodoWrite replaces the list but includes the same content
+    JSON.stringify({
+      timestamp: '2024-01-01T00:00:01.000Z',
+      message: { content: [{ type: 'tool_use', id: 'tw-1', name: 'TodoWrite', input: { todos: [
+        { content: 'Build feature', status: 'in_progress' },
+        { content: 'Write tests', status: 'pending' },
+      ] } }] },
+    }),
+    // 3. TaskUpdate uses taskId "alpha" — should resolve to the preserved mapping
+    JSON.stringify({
+      timestamp: '2024-01-01T00:00:02.000Z',
+      message: { content: [{ type: 'tool_use', id: 'tu-1', name: 'TaskUpdate', input: { taskId: 'alpha', status: 'completed' } }] },
+    }),
+  ];
+
+  await writeFile(filePath, lines.join('\n'), 'utf8');
+
+  try {
+    const result = await parseTranscript(filePath);
+    assert.equal(result.todos.length, 2);
+    assert.equal(result.todos[0].content, 'Build feature');
+    assert.equal(result.todos[0].status, 'completed', 'TaskUpdate via preserved taskId should mark todo completed');
+    assert.equal(result.todos[1].content, 'Write tests');
+    assert.equal(result.todos[1].status, 'pending');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
+test('TodoWrite without prior TaskCreate works as before (no regression)', async () => {
+  const dir = await mkdtemp(path.join(tmpdir(), 'claude-hud-'));
+  const filePath = path.join(dir, 'todowrite-only.jsonl');
+  const lines = [
+    JSON.stringify({
+      timestamp: '2024-01-01T00:00:00.000Z',
+      message: { content: [{ type: 'tool_use', id: 'tw-1', name: 'TodoWrite', input: { todos: [
+        { content: 'Task A', status: 'completed' },
+        { content: 'Task B', status: 'in_progress' },
+      ] } }] },
+    }),
+    // Second TodoWrite replaces the list
+    JSON.stringify({
+      timestamp: '2024-01-01T00:00:01.000Z',
+      message: { content: [{ type: 'tool_use', id: 'tw-2', name: 'TodoWrite', input: { todos: [
+        { content: 'Task B', status: 'completed' },
+        { content: 'Task C', status: 'pending' },
+      ] } }] },
+    }),
+  ];
+
+  await writeFile(filePath, lines.join('\n'), 'utf8');
+
+  try {
+    const result = await parseTranscript(filePath);
+    assert.equal(result.todos.length, 2);
+    assert.equal(result.todos[0].content, 'Task B');
+    assert.equal(result.todos[0].status, 'completed');
+    assert.equal(result.todos[1].content, 'Task C');
+    assert.equal(result.todos[1].status, 'pending');
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+});
+
 test('parseTranscript prefers custom title over slug for session name', async () => {
   const dir = await mkdtemp(path.join(tmpdir(), 'claude-hud-'));
   const filePath = path.join(dir, 'session-name-custom-title.jsonl');
