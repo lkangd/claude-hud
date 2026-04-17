@@ -7,6 +7,7 @@ import { loadConfig } from "./config.js";
 import { parseExtraCmdArg, runExtraCmd } from "./extra-cmd.js";
 import { getClaudeCodeVersion } from "./version.js";
 import { getMemoryUsage } from "./memory.js";
+import { applyContextWindowFallback } from "./context-cache.js";
 export type MainDeps = {
     readStdin: typeof readStdin;
     getUsageFromStdin: typeof getUsageFromStdin;
@@ -18,6 +19,7 @@ export type MainDeps = {
     runExtraCmd: typeof runExtraCmd;
     getClaudeCodeVersion: typeof getClaudeCodeVersion;
     getMemoryUsage: typeof getMemoryUsage;
+    applyContextWindowFallback: typeof applyContextWindowFallback;
     render: typeof render;
     now: () => number;
     log: (...args: unknown[]) => void;

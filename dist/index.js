@@ -7,6 +7,7 @@ import { loadConfig } from "./config.js";
 import { parseExtraCmdArg, runExtraCmd } from "./extra-cmd.js";
 import { getClaudeCodeVersion } from "./version.js";
 import { getMemoryUsage } from "./memory.js";
+import { applyContextWindowFallback } from "./context-cache.js";
 import { setLanguage, t } from "./i18n/index.js";
 import { fileURLToPath } from "node:url";
 import { realpathSync } from "node:fs";
@@ -22,6 +23,7 @@ export async function main(overrides = {}) {
         runExtraCmd,
         getClaudeCodeVersion,
         getMemoryUsage,
+        applyContextWindowFallback,
         render,
         now: () => Date.now(),
         log: console.log,
@@ -40,6 +42,7 @@ export async function main(overrides = {}) {
             }
             return;
         }
+        deps.applyContextWindowFallback(stdin);
         const transcriptPath = stdin.transcript_path ?? "";
         const transcript = await deps.parseTranscript(transcriptPath);
         const { claudeMdCount, rulesCount, mcpCount, hooksCount, outputStyle } = await deps.countConfigs(stdin.cwd);
