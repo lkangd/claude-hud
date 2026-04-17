@@ -64,10 +64,10 @@ export async function main(overrides: Partial<MainDeps> = {}): Promise<void> {
       return;
     }
 
-    deps.applyContextWindowFallback(stdin);
-
     const transcriptPath = stdin.transcript_path ?? "";
     const transcript = await deps.parseTranscript(transcriptPath);
+
+    deps.applyContextWindowFallback(stdin, {}, transcript.sessionName);
 
     const { claudeMdCount, rulesCount, mcpCount, hooksCount, outputStyle } =
       await deps.countConfigs(stdin.cwd);
