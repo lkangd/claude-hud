@@ -1,6 +1,6 @@
 {
   "name": "claude-hud",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "Real-time statusline HUD for Claude Code",
   "type": "module",
   "main": "dist/index.js",

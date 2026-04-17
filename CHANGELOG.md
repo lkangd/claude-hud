@@ -4,6 +4,11 @@ All notable changes to Claude HUD will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.13] - 2026-04-17
+
+### Fixed
+- Added a fallback for context window cache data when native context-window metrics are unavailable.
+
 ## [0.0.12] - 2026-04-04
 
 ### Added
