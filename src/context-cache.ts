@@ -26,6 +26,7 @@ const SWEEP_SAMPLE_RATE = 0.01;
 
 type CurrentUsage = NonNullable<NonNullable<StdinData['context_window']>['current_usage']>;
 type ContextWindow = NonNullable<StdinData['context_window']>;
+type RateLimits = StdinData['rate_limits'];
 
 type ContextCache = {
   used_percentage: number;
@@ -34,6 +35,7 @@ type ContextCache = {
   context_window_size?: number | null;
   saved_at?: number;
   session_name?: string | null;
+  rate_limits?: RateLimits;
 };
 
 export type ContextCacheDeps = {
@@ -117,6 +119,7 @@ function writeCache(
   contextWindow: ContextWindow,
   now: number,
   sessionName?: string,
+  rateLimits?: RateLimits,
 ): void {
   try {
     const cachePath = getCachePath(homeDir, transcriptPath);
@@ -134,6 +137,7 @@ function writeCache(
       context_window_size: contextWindow.context_window_size ?? null,
       saved_at: now,
       session_name: sessionName ?? null,
+      rate_limits: rateLimits ?? null,
     };
     fs.writeFileSync(cachePath, JSON.stringify(payload), 'utf8');
   } catch {
@@ -226,14 +230,18 @@ function hasGoodContext(contextWindow: ContextWindow): boolean {
 /**
  * Merge cached context fields into the current frame.
  * Prefer the frame's context_window_size when already present.
+ * Also restores rate_limits onto stdin when the cache has a valid snapshot.
  */
-function applyCachedContext(contextWindow: ContextWindow, cache: ContextCache): void {
+function applyCachedContext(contextWindow: ContextWindow, cache: ContextCache, stdin: StdinData): void {
   contextWindow.used_percentage = cache.used_percentage;
   contextWindow.remaining_percentage = cache.remaining_percentage ?? null;
   contextWindow.current_usage = cache.current_usage ?? null;
   contextWindow.context_window_size =
     contextWindow.context_window_size ??
     (cache.context_window_size ?? undefined);
+  if (cache.rate_limits != null) {
+    stdin.rate_limits = cache.rate_limits;
+  }
 }
 
 /**
@@ -267,12 +275,12 @@ export function applyContextWindowFallback(
   if (isSuspiciousZero(contextWindow)) {
     const cached = readCache(homeDir, transcriptPath);
     if (cached) {
-      applyCachedContext(contextWindow, cached);
+      applyCachedContext(contextWindow, cached, stdin);
     }
   }
 
   if (hasGoodContext(contextWindow)) {
-    writeCache(homeDir, transcriptPath, contextWindow, now, sessionName);
+    writeCache(homeDir, transcriptPath, contextWindow, now, sessionName, stdin.rate_limits);
     if (deps.random() < SWEEP_SAMPLE_RATE) {
       sweepCacheDir(getCacheDir(homeDir), now);
     }
