@@ -4,6 +4,12 @@ All notable changes to Claude HUD will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.16] - 2026-04-17
+
+### Fixed
+- Persist rate limit metadata in context fallback cache so 5-hour and 7-day usage bars stay stable when context stats are missing.
+
+
 ## [0.0.15] - 2026-04-17
 
 ### Fixed
