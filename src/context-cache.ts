@@ -33,6 +33,7 @@ type ContextCache = {
   current_usage?: CurrentUsage | null;
   context_window_size?: number | null;
   saved_at?: number;
+  session_name?: string | null;
 };
 
 export type ContextCacheDeps = {
@@ -115,6 +116,7 @@ function writeCache(
   transcriptPath: string,
   contextWindow: ContextWindow,
   now: number,
+  sessionName?: string,
 ): void {
   try {
     const cachePath = getCachePath(homeDir, transcriptPath);
@@ -131,6 +133,7 @@ function writeCache(
       current_usage: contextWindow.current_usage ?? null,
       context_window_size: contextWindow.context_window_size ?? null,
       saved_at: now,
+      session_name: sessionName ?? null,
     };
     fs.writeFileSync(cachePath, JSON.stringify(payload), 'utf8');
   } catch {
@@ -245,6 +248,7 @@ function applyCachedContext(contextWindow: ContextWindow, cache: ContextCache): 
 export function applyContextWindowFallback(
   stdin: StdinData,
   overrides: Partial<ContextCacheDeps> = {},
+  sessionName?: string,
 ): void {
   const contextWindow = stdin.context_window;
   if (!contextWindow) {
@@ -268,7 +272,7 @@ export function applyContextWindowFallback(
   }
 
   if (hasGoodContext(contextWindow)) {
-    writeCache(homeDir, transcriptPath, contextWindow, now);
+    writeCache(homeDir, transcriptPath, contextWindow, now, sessionName);
     if (deps.random() < SWEEP_SAMPLE_RATE) {
       sweepCacheDir(getCacheDir(homeDir), now);
     }
