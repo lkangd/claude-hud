@@ -4,6 +4,11 @@ All notable changes to Claude HUD will be documented in this file.
 
 ## [Unreleased]
 
+## [0.0.15] - 2026-04-17
+
+### Fixed
+- Persist transcript session name in context-window fallback cache metadata.
+
 ## [0.0.14] - 2026-04-17
 
 ### Fixed
