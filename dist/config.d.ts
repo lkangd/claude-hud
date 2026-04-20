@@ -34,6 +34,7 @@ export interface HudConfig {
     lineLayout: LineLayoutType;
     showSeparators: boolean;
     pathLevels: 1 | 2 | 3;
+    maxWidth: number | null;
     elementOrder: HudElement[];
     gitStatus: {
         enabled: boolean;
