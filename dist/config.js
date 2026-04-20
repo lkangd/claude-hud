@@ -44,6 +44,7 @@ export const DEFAULT_CONFIG = {
         showTodos: false,
         showSessionName: false,
         showClaudeCodeVersion: false,
+        showEffortLevel: false,
         showMemoryUsage: false,
         showSessionTokens: false,
         showOutputStyle: false,
@@ -253,6 +254,9 @@ export function mergeConfig(userConfig) {
         showClaudeCodeVersion: typeof migrated.display?.showClaudeCodeVersion === 'boolean'
             ? migrated.display.showClaudeCodeVersion
             : DEFAULT_CONFIG.display.showClaudeCodeVersion,
+        showEffortLevel: typeof migrated.display?.showEffortLevel === 'boolean'
+            ? migrated.display.showEffortLevel
+            : DEFAULT_CONFIG.display.showEffortLevel,
         showMemoryUsage: typeof migrated.display?.showMemoryUsage === 'boolean'
             ? migrated.display.showMemoryUsage
             : DEFAULT_CONFIG.display.showMemoryUsage,

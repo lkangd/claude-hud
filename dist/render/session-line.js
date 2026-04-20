@@ -33,7 +33,13 @@ export function renderSessionLine(ctx) {
     // Model and context bar (FIRST)
     const providerLabel = getProviderLabel(ctx.stdin);
     const modelQualifier = providerLabel ?? undefined;
-    const modelDisplay = modelQualifier ? `${model} | ${modelQualifier}` : model;
+    let modelDisplay = modelQualifier ? `${model} | ${modelQualifier}` : model;
+    if (ctx.effortLevel && ctx.effortSymbol) {
+        modelDisplay += ` ${ctx.effortSymbol}${ctx.effortLevel}`;
+    }
+    else if (ctx.effortLevel) {
+        modelDisplay += ` ${ctx.effortLevel}`;
+    }
     if (display?.showModel !== false && display?.showContextBar !== false) {
         parts.push(`${modelColor(`[${modelDisplay}]`, colors)} ${bar} ${contextValueDisplay}`);
     }

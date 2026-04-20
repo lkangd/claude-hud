@@ -35,6 +35,7 @@ export interface StdinData {
             resets_at?: number | null;
         } | null;
     } | null;
+    effort?: string | null;
 }
 export interface ToolEntry {
     id: string;
@@ -100,5 +101,7 @@ export interface RenderContext {
     extraLabel: string | null;
     outputStyle?: string;
     claudeCodeVersion?: string;
+    effortLevel?: string;
+    effortSymbol?: string;
 }
 //# sourceMappingURL=types.d.ts.map
