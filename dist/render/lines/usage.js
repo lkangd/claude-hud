@@ -4,6 +4,7 @@ import { critical, label, getQuotaColor, quotaBar, RESET } from "../colors.js";
 import { getAdaptiveBarWidth } from "../../utils/terminal.js";
 import { t } from "../../i18n/index.js";
 import { progressLabel } from "./label-align.js";
+import { formatResetTime } from "../format-reset-time.js";
 export function renderUsageLine(ctx, alignLabels = false) {
     const display = ctx.config?.display;
     const colors = ctx.config?.colors;
@@ -17,11 +18,13 @@ export function renderUsageLine(ctx, alignLabels = false) {
         return null;
     }
     const usageLabel = progressLabel("label.usage", colors, alignLabels);
+    const timeFormat = display?.timeFormat ?? 'relative';
+    const resetsKey = timeFormat === 'absolute' ? "format.resets" : "format.resetsIn";
     if (isLimitReached(ctx.usageData)) {
         const resetTime = ctx.usageData.fiveHour === 100
-            ? formatResetTime(ctx.usageData.fiveHourResetAt)
-            : formatResetTime(ctx.usageData.sevenDayResetAt);
-        return `${usageLabel} ${critical(`⚠ ${t("status.limitReached")}${resetTime ? ` (${t("format.resets")} ${resetTime})` : ""}`, colors)}`;
+            ? formatResetTime(ctx.usageData.fiveHourResetAt, timeFormat)
+            : formatResetTime(ctx.usageData.sevenDayResetAt, timeFormat);
+        return `${usageLabel} ${critical(`⚠ ${t("status.limitReached")}${resetTime ? ` (${t(resetsKey)} ${resetTime})` : ""}`, colors)}`;
     }
     const threshold = display?.usageThreshold ?? 0;
     const fiveHour = ctx.usageData.fiveHour;
@@ -42,6 +45,7 @@ export function renderUsageLine(ctx, alignLabels = false) {
             colors,
             usageBarEnabled,
             barWidth,
+            timeFormat,
             forceLabel: true,
             alignLabels,
         });
@@ -54,6 +58,7 @@ export function renderUsageLine(ctx, alignLabels = false) {
         colors,
         usageBarEnabled,
         barWidth,
+        timeFormat,
     });
     if (sevenDay !== null && sevenDay >= sevenDayThreshold) {
         const sevenDayPart = formatUsageWindowPart({
@@ -64,6 +69,7 @@ export function renderUsageLine(ctx, alignLabels = false) {
             colors,
             usageBarEnabled,
             barWidth,
+            timeFormat,
             forceLabel: true,
             alignLabels,
         });
@@ -78,41 +84,22 @@ function formatUsagePercent(percent, colors) {
     const color = getQuotaColor(percent, colors);
     return `${color}${percent}%${RESET}`;
 }
-function formatUsageWindowPart({ label: windowLabel, labelKey, percent, resetAt, colors, usageBarEnabled, barWidth, forceLabel = false, alignLabels = false, }) {
+function formatUsageWindowPart({ label: windowLabel, labelKey, percent, resetAt, colors, usageBarEnabled, barWidth, timeFormat = 'relative', forceLabel = false, alignLabels = false, }) {
     const usageDisplay = formatUsagePercent(percent, colors);
-    const reset = formatResetTime(resetAt);
+    const reset = formatResetTime(resetAt, timeFormat);
     const styledLabel = labelKey
         ? progressLabel(labelKey, colors, alignLabels)
         : label(windowLabel, colors);
+    // "resets in X" for relative/both; "resets X" for absolute (avoids "resets in at 14:30")
+    const resetsKey = timeFormat === 'absolute' ? "format.resets" : "format.resetsIn";
     if (usageBarEnabled) {
         const body = reset
-            ? `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay} (${t("format.resetsIn")} ${reset})`
+            ? `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay} (${t(resetsKey)} ${reset})`
             : `${quotaBar(percent ?? 0, barWidth, colors)} ${usageDisplay}`;
         return forceLabel ? `${styledLabel} ${body}` : body;
     }
     return reset
-        ? `${styledLabel} ${usageDisplay} (${t("format.resetsIn")} ${reset})`
+        ? `${styledLabel} ${usageDisplay} (${t(resetsKey)} ${reset})`
         : `${styledLabel} ${usageDisplay}`;
-}
-function formatResetTime(resetAt) {
-    if (!resetAt)
-        return "";
-    const now = new Date();
-    const diffMs = resetAt.getTime() - now.getTime();
-    if (diffMs <= 0)
-        return "";
-    const diffMins = Math.ceil(diffMs / 60000);
-    if (diffMins < 60)
-        return `${diffMins}m`;
-    const hours = Math.floor(diffMins / 60);
-    const mins = diffMins % 60;
-    if (hours >= 24) {
-        const days = Math.floor(hours / 24);
-        const remHours = hours % 24;
-        if (remHours > 0)
-            return `${days}d ${remHours}h`;
-        return `${days}d`;
-    }
-    return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`;
 }
 //# sourceMappingURL=usage.js.map
