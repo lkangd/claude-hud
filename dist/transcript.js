@@ -363,6 +363,10 @@ function extractTarget(toolName, input) {
             return input.pattern;
         case 'Grep':
             return input.pattern;
+        case 'Skill':
+            return typeof input.skill === 'string' && input.skill.trim().length > 0
+                ? input.skill
+                : undefined;
         case 'Bash':
             const cmd = input.command;
             return cmd?.slice(0, 30) + (cmd?.length > 30 ? '...' : '');
