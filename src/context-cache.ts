@@ -74,7 +74,7 @@ function getCacheDir(homeDir: string): string {
  */
 function readCache(
   homeDir: string,
-  transcriptPath: string
+  transcriptPath: string,
 ): ContextCache | null {
   try {
     const cachePath = getCachePath(homeDir, transcriptPath);
@@ -97,10 +97,7 @@ function readCache(
  * Decide whether the current write can be skipped because the cached snapshot
  * for this session was refreshed recently enough.
  */
-function shouldSkipWrite(
-  cachePath: string,
-  now: number
-): boolean {
+function shouldSkipWrite(cachePath: string, now: number): boolean {
   try {
     const stat = fs.statSync(cachePath);
     return now - stat.mtimeMs < WRITE_TTL_MS;
@@ -118,7 +115,7 @@ function writeCache(
   transcriptPath: string,
   contextWindow: ContextWindow,
   now: number,
-  sessionName?: string
+  sessionName?: string,
 ): void {
   try {
     const cachePath = getCachePath(homeDir, transcriptPath);
@@ -202,12 +199,26 @@ function isAllUsageZero(usage: ContextWindow["current_usage"]): boolean {
 }
 
 /**
- * Detect the known Claude Code glitch where usage is reported as zero
- * despite a large accumulated input token count.
+ * Returns true when context window data looks like a Claude Code reporting
+ * glitch rather than a genuine zero-usage state. Two conditions trigger this:
+ *
+ * 1. Accumulated token totals (input or output) are non-zero but
+ *    `used_percentage` is 0 — the percentage hasn't caught up with reality.
+ * 2. Total input tokens exceed the declared window size, `used_percentage`
+ *    is still 0, AND every field in `current_usage` is also zero — the frame
+ *    is entirely empty despite an overflow-level token count.
+ *
+ * Returns false when data is clearly valid: no window size, tokens within
+ * bounds, or a non-zero `used_percentage` that confirms real usage.
  */
 function isSuspiciousZero(contextWindow: ContextWindow): boolean {
+  const usedPercentage = contextWindow.used_percentage ?? 0;
   const contextWindowSize = contextWindow.context_window_size ?? 0;
   const totalInputTokens = contextWindow.total_input_tokens ?? 0;
+  const totalOutputTokens = contextWindow.total_output_tokens ?? 0;
+  if ((totalInputTokens > 0 || totalOutputTokens > 0) && usedPercentage === 0) {
+    return true;
+  }
   if (contextWindowSize <= 0 || totalInputTokens <= contextWindowSize) {
     return false;
   }
@@ -234,7 +245,7 @@ function hasGoodContext(contextWindow: ContextWindow): boolean {
  */
 function applyCachedContext(
   contextWindow: ContextWindow,
-  cache: ContextCache
+  cache: ContextCache,
 ): void {
   contextWindow.used_percentage = cache.used_percentage;
   contextWindow.remaining_percentage = cache.remaining_percentage ?? null;
@@ -268,7 +279,7 @@ export function applyContextWindowFallback(
   stdin: StdinData,
   overrides: Partial<ContextCacheDeps> = {},
   sessionName?: string,
-  compactHint?: CompactHint
+  compactHint?: CompactHint,
 ): void {
   const contextWindow = stdin.context_window;
   if (!contextWindow) {
@@ -300,7 +311,10 @@ export function applyContextWindowFallback(
       const postTokens = compactHint?.lastCompactPostTokens;
       const size = contextWindow.context_window_size ?? 0;
       if (typeof postTokens === "number" && postTokens > 0 && size > 0) {
-        const pct = Math.min(100, Math.max(0, Math.round((postTokens / size) * 100)));
+        const pct = Math.min(
+          100,
+          Math.max(0, Math.round((postTokens / size) * 100)),
+        );
         contextWindow.used_percentage = pct;
         contextWindow.remaining_percentage = 100 - pct;
       }

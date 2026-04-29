@@ -11,6 +11,7 @@ export interface StdinData {
   context_window?: {
     context_window_size?: number;
     total_input_tokens?: number | null;
+    total_output_tokens?: number | null;
     current_usage?: {
       input_tokens?: number;
       output_tokens?: number;
